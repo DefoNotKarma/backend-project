@@ -2,9 +2,10 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "backend website project",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js"
   },
   "keywords": [
     "javascript",
