@@ -16,14 +16,14 @@ const registerUser = asyncHandler(async (req, res) => {
     //8 - check for user creation
     //9 - return response
 
-    
+    console.log("request body : " , req.body)
     
     // 1.
     const {fullname, username, email, password} = req.body
     console.log(
-        "email" , email,
-        "\n username", username,
+        "username", username,
         "\n fullname", fullname,
+        "\n email" , email,
         "\n password", password
     );
 
@@ -37,7 +37,7 @@ const registerUser = asyncHandler(async (req, res) => {
     //can add more validations
     
     //3.
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or : [{ email } , { username }]
     })
 
@@ -48,6 +48,8 @@ const registerUser = asyncHandler(async (req, res) => {
     //4.
     const avatarLocalPath = req.files?.avatar[0]?.path;
     const coverImgLocalPath = req.files?.coverImage[0]?.path;
+
+    console.log("request files : " , req.files)
 
     if(!avatarLocalPath){
         throw new ApiError(400, "Avatar is required");
@@ -72,7 +74,7 @@ const registerUser = asyncHandler(async (req, res) => {
     })
 
     //7.
-    const createdUser = User.findById(user._id).select(
+    const createdUser = await User.findById(user._id).select(
         "-password -refreshToken" 
         //by default everything is selected
     ) 
@@ -84,11 +86,10 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     //9.
-    
+    console.log("\nUser", user.username, "has been regsitered")
     return res.status(201).json(
         new ApiResponse(200, createdUser, "User registered")
     )
-
 }) 
 
 export {registerUser}
