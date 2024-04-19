@@ -97,4 +97,83 @@ const registerUser = asyncHandler(async (req, res) => {
     )
 }) 
 
-export {registerUser}
+const generate_Access_And_Refresh_Token = async(userID) => {
+    try {
+        const user = await User.findById(userID)
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+
+        user.refreshToken = refreshToken
+        await user.save({ validateBeforeSave : false }) 
+
+        return {accessToken, refreshToken}
+
+    } catch (error) {
+        throw new ApiError(500,
+        "Something went wrong while generating ref and acc tokens")
+    }
+}
+
+const loginUser = asyncHandler( async (req, res) => {
+    // 1 - get user details from req.body
+    // 2 - validate that fields are not empty (username or email)
+    // 3 - check if user exists : if not return cant 
+    // 4 - check password
+    // 5 - generate access and refresh tokens
+    // 6 - give user the tokens via secure cookies
+
+
+    //1.
+    const {email, username, password} = req.body
+
+    if (!username || !email){
+        throw new ApiError(400, "username or email is required")
+    }
+
+    const user = await User.findOne({
+        $or : [{username}, {email}]
+    })
+
+    if (!user){
+        throw new ApiError(404, "User does not exist")
+    }
+
+    const isPassValid = await user.isPasswordCorrect(password)
+
+    if (isPassValid){
+        throw new ApiError(401, "Invalid User Credentials")
+    }
+
+    const {accessToken, refreshToken} = await generate_Access_And_Refresh_Token(user._id)
+
+    const LoggedInUser = await User.findById(user._id).
+    select("-password -refreshToken")
+
+    const options = {
+        httpOnly : true,
+        secure : true
+    }   // cookie settings, can only be edited by backend
+
+
+    return res.status(200)
+    .cookie("accessToken" , accessToken, options)
+    .cookie("refreshToken" , refreshToken, options)
+    .json(
+        new ApiResponse(
+            200,
+           { user : LoggedInUser, refreshToken, accessToken},
+           "User Logged In Successfully"
+           // json if user wants his cookies ( not imp ) 
+        ) 
+    )
+})
+
+const logoutUser = asyncHandler(async (req, res) => {
+
+})
+
+
+export {
+    registerUser,
+    loginUser
+}
