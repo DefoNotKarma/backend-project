@@ -1,10 +1,11 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiErrors.js";
 import { User } from "../models/user.models.js";
-import { uploadOnCloudinary } from "../utils/cloudinay.js";
+import { deleteSingleFileFromCloudinary, uploadOnCloudinary } from "../utils/cloudinay.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
 import { response } from "express";
+import { extractPublicIdFromUrl } from "cloudinary";
 
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -235,7 +236,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         return response.status(400)
         .cookie("accessToken", accessToken)
         .cookie("refreshToken" , newRefreshToken)
-        .json(ApiResponse(
+        .json(new ApiResponse(
             200,
             {
                 accessToken, refreshToken : newRefreshToken
@@ -314,6 +315,20 @@ const UpdateUserAvatar = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Avatar file is missing")
     }
 
+    const oldImgUser = await User.findById(req.user?._id);
+    
+
+    // deleting prev image from cloudinary
+
+    if (oldImgUser){
+        const oldImgURL = oldImgUser.avatar;
+        const publicId = extractPublicIdFromUrl(oldImgURL);
+        await deleteSingleFileFromCloudinary(publicId);
+    }else{
+        throw new ApiError(512, "Avatar Deletion error")
+    }
+
+
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
     if(!avatar.url){
@@ -350,6 +365,19 @@ const UpdateUserCover = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Cover Image Uploading error")
     }
 
+    const oldImgUser = await User.findById(req.user?._id);
+
+    
+    // deleting prev image from cloudinary
+
+    if (oldImgUser){
+        const oldImgURL = oldImgUser.coverImage;
+        const publicId = extractPublicIdFromUrl(oldImgURL);
+        await deleteSingleFileFromCloudinary(publicId);
+    }else{
+        throw new ApiError(512, "CoverImage Deletion error")
+    }
+
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -359,6 +387,7 @@ const UpdateUserCover = asyncHandler(async (req, res) => {
         },
         {new : true}
     ).select("-password")
+
 
     return res
     .status(200)
