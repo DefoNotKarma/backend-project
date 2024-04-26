@@ -1,6 +1,6 @@
 import {v2 as cloudinary} from "cloudinary";
 import fs from "fs";
-import { asyncHandler } from "./asyncHandler";
+import { asyncHandler } from "./asyncHandler.js";
 
           
 cloudinary.config({ 
@@ -14,6 +14,7 @@ cloudinary.config({
 
 const uploadOnCloudinary = async (localFilePath) => {
     try {
+        
         if (!localFilePath) 
             return null;
 
@@ -40,16 +41,17 @@ const uploadOnCloudinary = async (localFilePath) => {
 
 const deleteSingleFileFromCloudinary = async (cloudFilePath) => {
     try {
-        if (!cloudFilePath){
+        const publicId = extractPublicIdFromUrl(cloudFilePath);
+        if (!publicId){
             return null;
         }
         
         await cloudinary.uploader.destroy(
-            cloudFilePath,
+            publicId,
             { resource_type : "auto"}
         )
     
-        console.log("deleted from cloudinary : ", cloudFilePath);
+        console.log("deleted from cloudinary : ", publicId);
     } catch (error) {
         console.error("Cloudinary Deletion Error : ", error)
         return null;

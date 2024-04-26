@@ -5,7 +5,6 @@ import { deleteSingleFileFromCloudinary, uploadOnCloudinary } from "../utils/clo
 import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
 import { response } from "express";
-import { extractPublicIdFromUrl } from "cloudinary";
 
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -322,8 +321,7 @@ const UpdateUserAvatar = asyncHandler(async (req, res) => {
 
     if (oldImgUser){
         const oldImgURL = oldImgUser.avatar;
-        const publicId = extractPublicIdFromUrl(oldImgURL);
-        await deleteSingleFileFromCloudinary(publicId);
+        await deleteSingleFileFromCloudinary(oldImgURL);
     }else{
         throw new ApiError(512, "Avatar Deletion error")
     }
@@ -372,8 +370,7 @@ const UpdateUserCover = asyncHandler(async (req, res) => {
 
     if (oldImgUser){
         const oldImgURL = oldImgUser.coverImage;
-        const publicId = extractPublicIdFromUrl(oldImgURL);
-        await deleteSingleFileFromCloudinary(publicId);
+        await deleteSingleFileFromCloudinary(oldImgURL);
     }else{
         throw new ApiError(512, "CoverImage Deletion error")
     }
